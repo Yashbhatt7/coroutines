@@ -1,4 +1,4 @@
-format ELF64 executable
+format ELF64
 
 STDIN_FILENO = 0
 STDOUT_FILENO = 1
@@ -10,7 +10,7 @@ SYS_exit = 60
 COROUTINES_CAPACITY = 11
 STACK_CAPACITY = 4 * 1024
 
-segment executable
+section '.text'
 print:
     mov     r9, -3689348814741910323
     sub     rsp, 40
@@ -68,6 +68,7 @@ counter:
     ret
 
 ;rdi : procedure to start in a new coroutine
+public coroutine_go
 coroutine_go:
     cmp QWORD [contexts_count], COROUTINES_CAPACITY
     jge overflow_fail
@@ -80,6 +81,9 @@ coroutine_go:
 
     sub QWORD [stacks_end], STACK_CAPACITY
 
+    sub rax, 8
+    mov QWORD [rax], coroutine_finish
+
     mov [contexts_rsp + rbx * 8],       rax
     mov QWORD [contexts_rbp + rbx * 8], 0
     mov [contexts_rip + rbx * 8],       rdi
@@ -91,6 +95,7 @@ coroutine_go:
 ;         ^     ; that arrow is where now rsp is pointing after we do pop rax because pop rax will do this
                 ; rax = [rsp]
                 ; rsp += 8 as if coroutine_init was never called
+public coroutine_init
 coroutine_init:
     cmp QWORD [contexts_count], COROUTINES_CAPACITY
     jge overflow_fail
@@ -110,6 +115,7 @@ coroutine_init:
 
 ; ...[ret]
 ;         ^
+public coroutine_yield
 coroutine_yield:
     mov rbx, [contexts_current]
 
@@ -129,49 +135,62 @@ coroutine_yield:
     mov rbp,  [contexts_rbp + rbx * 8]
     jmp QWORD [contexts_rip + rbx * 8]
 
-
-entry main
-main:
-    call coroutine_init
-
-    mov rdi, counter
-    call coroutine_go
-
-    mov rdi, counter
-    call coroutine_go
-
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-    call coroutine_yield
-
-    ; mov rdi, [stacks_end]
-    ; call print
-    ;
-    ; sub QWORD [stacks_end], STACK_CAPACITY
-    ; mov rbx, [stacks_end]
-    ; mov rdi, rbx
-    ; call print
-
-
-    mov rdi, [contexts_count]
-    call print
-
+public coroutine_finish
+coroutine_finish:
     mov rax, SYS_write
     mov rdi, STDOUT_FILENO
-    mov rsi, ok
-    mov rdx, ok_len
+    mov rsi, coroutine_finish_not_implemented
+    mov rdx, coroutine_finish_not_implemented_len
     syscall
 
     mov rax, SYS_exit
-    mov rdi, 0
+    mov rdi, 69
     syscall
+
+; entry main
+; main:
+;     call coroutine_init
+;
+;     mov rdi, counter
+;     call coroutine_go
+;
+;     mov rdi, counter
+;     call coroutine_go
+;
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;     call coroutine_yield
+;
+;     ; mov rdi, [stacks_end]
+;     ; call print
+;     ;
+;     ; sub QWORD [stacks_end], STACK_CAPACITY
+;     ; mov rbx, [stacks_end]
+;     ; mov rdi, rbx
+;     ; call print
+;
+;
+;     mov rdi, [contexts_count]
+;     call print
+;
+;     call coroutine_finish
+;
+;     mov rax, SYS_write
+;     mov rdi, STDOUT_FILENO
+;     mov rsi, ok
+;     mov rdx, ok_len
+;     syscall
+;
+;     mov rax, SYS_exit
+;     mov rdi, 0
+;     syscall
 
 overflow_fail:
     mov rax, SYS_write
@@ -184,19 +203,22 @@ overflow_fail:
     mov rdi, 0
     syscall
 
-segment readable
+section '.data'
 too_many_coroutines_msg: db "err: Too many coroutines!", 10, 0
 too_many_coroutines_msg_len = $ - too_many_coroutines_msg
-ok: db "ok", 10, 0
-ok_len = $ - ok
 
-segment readable writable
+coroutine_finish_not_implemented: db "coroutine_finish is not implemented yet", 10, 0
+coroutine_finish_not_implemented_len = $ - coroutine_finish_not_implemented
+
 contexts_current: dq 0
+
 stacks_end: dq stacks + COROUTINES_CAPACITY * STACK_CAPACITY
+
+
+section '.bss'
 stacks: rb COROUTINES_CAPACITY * STACK_CAPACITY
 contexts_rsp: rq COROUTINES_CAPACITY
 contexts_rbp: rq COROUTINES_CAPACITY
 contexts_rip: rq COROUTINES_CAPACITY
-
 contexts_count: rq 1
 
