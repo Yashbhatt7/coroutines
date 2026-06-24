@@ -1,3 +1,5 @@
 main
 *.o
+* test.asm
+* test.c
 
