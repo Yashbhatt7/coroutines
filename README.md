@@ -36,6 +36,6 @@ This project was heavily inspired by the recreational programming streamer [Tsod
 
 The original implementation was done on live stream:
 
-[![thumbnail](./thumbnail.png)](https://www.youtube.com/watch?v=sYSP_elDdZw)
+[![link](./thumbnail.png)](https://www.youtube.com/watch?v=sYSP_elDdZw)
 
 
