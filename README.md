@@ -25,10 +25,15 @@ $ ./main
 ```
 
 ## Supported on
+
 - Linux x86_64
 
 ## Special Thanks (Credits)
+
 This project was heavily inspired by the recreational programming streamer [Tsoding](https://www.youtube.com/@TsodingDaily).
+
+## Stream
+
 The original implementation was done on live stream:
 
 [![thumbnail](./thumbnail.png)](https://www.youtube.com/watch?v=sYSP_elDdZw)
